@@ -4,6 +4,7 @@ import { useActionState, useEffect, useState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { cadastrar, entrar, type EstadoFormulario } from '@/modulos/auth/acoes'
 import { sugerirUsername } from '@/modulos/auth/validacao'
+import Aviso from './Aviso'
 
 const VAZIO: EstadoFormulario = {}
 
@@ -13,7 +14,7 @@ function Botao({ rotulo }: { rotulo: string }) {
     <button
       type="submit"
       disabled={pending}
-      className="mt-2 h-13 w-full rounded-2xl bg-acento text-[15px] font-semibold text-fundo transition active:scale-[0.99] disabled:opacity-55"
+      className="mt-2 h-13 w-full rounded-2xl bg-acento text-[15px] font-semibold text-fundo transition active:scale-[0.99] disabled:bg-superficie-2 disabled:text-suave"
     >
       {pending ? 'Aguarde…' : rotulo}
     </button>
@@ -25,13 +26,19 @@ function Campo({
   rotulo,
   tipo = 'text',
   erro,
+  apoio,
   ...resto
 }: {
   nome: string
   rotulo: string
   tipo?: string
   erro?: string
+  /** Explicação curta sob o campo, para não precisar errar antes de saber a regra. */
+  apoio?: string
 } & React.InputHTMLAttributes<HTMLInputElement>) {
+  const idApoio = `${nome}-apoio`
+  const idErro = `${nome}-erro`
+
   return (
     <label className="flex flex-col gap-2">
       <span className="text-[13px] font-medium text-suave">{rotulo}</span>
@@ -39,12 +46,21 @@ function Campo({
         name={nome}
         type={tipo}
         aria-invalid={erro ? true : undefined}
-        className={`h-13 rounded-2xl border bg-superficie px-4 text-[15px] text-texto outline-none placeholder:text-suave/60 focus:border-acento ${
-          erro ? 'border-alerta' : 'border-borda'
+        aria-describedby={erro ? idErro : apoio ? idApoio : undefined}
+        className={`h-13 rounded-2xl border bg-superficie px-4 text-[15px] text-texto outline-none placeholder:text-tenue focus:border-borda-forte ${
+          erro ? 'border-acento' : 'border-borda'
         }`}
         {...resto}
       />
-      {erro ? <span className="text-[13px] text-alerta">{erro}</span> : null}
+      {erro ? (
+        <span id={idErro} className="text-[13px] font-medium text-texto">
+          {erro}
+        </span>
+      ) : apoio ? (
+        <span id={idApoio} className="text-[12px] text-tenue">
+          {apoio}
+        </span>
+      ) : null}
     </label>
   )
 }
@@ -74,14 +90,20 @@ export default function FormularioAuth({ proximo }: { proximo?: string }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-2 gap-1 rounded-2xl bg-superficie p-1">
+      <div
+        role="tablist"
+        aria-label="Entrar ou criar conta"
+        className="grid grid-cols-2 gap-1 rounded-2xl border border-borda bg-superficie p-1"
+      >
         {(['entrar', 'cadastrar'] as const).map((valor) => (
           <button
             key={valor}
             type="button"
+            role="tab"
+            aria-selected={aba === valor}
             onClick={() => setAba(valor)}
             className={`h-10 rounded-xl text-[14px] font-semibold transition ${
-              aba === valor ? 'bg-superficie-2 text-texto' : 'text-suave'
+              aba === valor ? 'bg-superficie-3 text-texto' : 'text-tenue'
             }`}
           >
             {valor === 'entrar' ? 'Entrar' : 'Criar conta'}
@@ -144,6 +166,7 @@ export default function FormularioAuth({ proximo }: { proximo?: string }) {
             autoComplete="username"
             autoCapitalize="none"
             placeholder="daniel"
+            apoio="Seu identificador público no Zelvo. Letras minúsculas e números."
             value={username}
             onChange={(evento) => {
               setTocouUsername(true)
@@ -157,22 +180,19 @@ export default function FormularioAuth({ proximo }: { proximo?: string }) {
             tipo="password"
             erro={erros.senha}
             autoComplete="new-password"
+            apoio="Mínimo de 8 caracteres."
             required
           />
           <Botao rotulo="Criar conta" />
         </form>
       )}
 
-      {erros.formulario ? (
-        <p className="rounded-2xl border border-alerta/40 bg-alerta/10 px-4 py-3 text-[14px] text-alerta">
-          {erros.formulario}
-        </p>
-      ) : null}
+      {erros.formulario ? <Aviso tipo="erro">{erros.formulario}</Aviso> : null}
 
       {estado.aviso ? (
-        <p className="rounded-2xl border border-acento/35 bg-acento/10 px-4 py-3 text-[14px] text-acento">
+        <Aviso tipo="sucesso" titulo="Conta criada">
           {estado.aviso}
-        </p>
+        </Aviso>
       ) : null}
     </div>
   )

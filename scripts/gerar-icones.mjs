@@ -3,8 +3,9 @@
 import sharp from 'sharp'
 import { mkdir } from 'node:fs/promises'
 
-const FUNDO = '#0A0A0C'
-const ACENTO = '#C6F24E'
+const FUNDO = '#08080A'
+// Paleta monocromática: o raio é branco sobre preto, sem cor de marca.
+const ACENTO = '#FFFFFF'
 
 // O raio do "squircle" do iOS. Para o ícone normal desenhamos o fundo inteiro,
 // porque o próprio iOS recorta os cantos.

@@ -1,15 +1,23 @@
 @import "tailwindcss";
 
+/*
+ * Paleta monocromática: preto, cinza e branco. Não há cor de marca — a
+ * hierarquia é feita por luminosidade (fundo escuro, superfície um degrau
+ * acima, texto branco) e por peso de fonte, nunca por matiz. Ao mexer aqui,
+ * manter isso: um token colorido volta a "colorir" o app inteiro.
+ */
 @theme {
-  --color-fundo: #0a0a0c;
-  --color-superficie: #131317;
-  --color-superficie-2: #1b1b21;
-  --color-borda: #26262e;
-  --color-texto: #e1e1e6;
-  --color-suave: #8c8c96;
-  --color-acento: #c6f24e;
-  --color-alerta: #f2845c;
-  --color-atencao: #e8c15c;
+  --color-fundo: #08080a;
+  --color-superficie: #121215;
+  --color-superficie-2: #1c1c20;
+  --color-superficie-3: #26262b;
+  --color-borda: #2a2a30;
+  --color-borda-forte: #44444d;
+  --color-texto: #fafafa;
+  --color-suave: #a1a1ab;
+  --color-tenue: #6e6e79;
+  /* Branco puro. É a cor dos botões principais e da barra de progresso. */
+  --color-acento: #ffffff;
 }
 
 html {
@@ -22,4 +30,14 @@ body {
   /* Respeita a área segura do iPhone quando instalado na tela de início. */
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
+}
+
+/*
+ * Foco visível só no teclado. Sem paleta colorida, o contorno branco é o
+ * único sinal de onde está o foco — tirá-lo deixaria o app inacessível
+ * fora do toque.
+ */
+:focus-visible {
+  outline: 2px solid var(--color-acento);
+  outline-offset: 2px;
 }
