@@ -5,7 +5,8 @@ import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { db } from '@/db/client'
 import { usuarios } from '@/db/schema'
-import { mensagemDeErro, traduzirErroDeBanco } from '@/db/erros'
+import { erroInesperado } from '@/modulos/comum/erros-de-acao'
+import type { EstadoFormulario } from '@/modulos/comum/formulario'
 import { clienteServidor } from './supabase-servidor'
 import { garantirPerfil } from './perfil'
 import {
@@ -25,11 +26,6 @@ import {
  * fica só nas exportadas, fora do try, porque ele funciona lançando uma
  * exceção — dentro de um catch ele viraria "erro inesperado".
  */
-
-export type EstadoFormulario = {
-  erros?: Record<string, string>
-  aviso?: string
-}
 
 type Resultado = EstadoFormulario | { destino: string }
 
@@ -51,24 +47,6 @@ function traduzirErro(codigo: string | undefined, mensagem: string): string {
       return 'O cadastro está desligado no painel do Supabase (Authentication → Sign In / Providers).'
     default:
       return mensagem || 'Não deu para completar. Tente de novo.'
-  }
-}
-
-/**
- * Rede de segurança: qualquer falha não prevista vira texto na tela em vez de
- * uma requisição vermelha sem explicação. O erro completo continua indo para
- * o log da Vercel.
- */
-function erroInesperado(erro: unknown, onde: string): EstadoFormulario {
-  console.error(`[zelvo:${onde}]`, erro)
-
-  const deBanco = traduzirErroDeBanco(erro)
-  if (deBanco) return { erros: { formulario: deBanco } }
-
-  return {
-    erros: {
-      formulario: `Falha inesperada no servidor: ${mensagemDeErro(erro)}`,
-    },
   }
 }
 

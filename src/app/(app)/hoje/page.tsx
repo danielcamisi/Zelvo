@@ -1,5 +1,8 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
+import ItemTarefa from '@/components/ItemTarefa'
 import { exigirUsuario } from '@/modulos/auth/sessao'
+import { tarefasDeHoje } from '@/modulos/tarefas/consultas'
 import { nivelPorXp } from '@/regras/nivel'
 
 export const metadata: Metadata = { title: 'Hoje · Zelvo' }
@@ -10,6 +13,7 @@ export default async function Pagina() {
   // precisa desse recorte: usar o total direto faria 100% a partir do
   // primeiro nível concluído.
   const progresso = nivelPorXp(usuario.xpTotal)
+  const { tarefas } = await tarefasDeHoje(usuario.id, usuario.timezone)
 
   return (
     <div className="flex flex-col gap-6">
@@ -44,12 +48,44 @@ export default async function Pagina() {
         </dl>
       </section>
 
-      <section className="rounded-3xl border border-borda bg-superficie p-5">
-        <h2 className="text-[15px] font-semibold">Tarefas de hoje</h2>
-        <p className="mt-2 text-[13px] leading-relaxed text-suave">
-          Você ainda não tem metas cadastradas. A criação de metas e tarefas é a próxima etapa
-          do desenvolvimento; sua conta e seu perfil já estão ativos.
-        </p>
+      <section className="flex flex-col gap-3">
+        <div className="flex items-baseline justify-between gap-3">
+          <h2 className="text-[17px] font-semibold tracking-tight">Tarefas de hoje</h2>
+          {tarefas.length > 0 ? (
+            <span className="text-[13px] text-tenue">
+              {tarefas.length} {tarefas.length === 1 ? 'tarefa' : 'tarefas'}
+            </span>
+          ) : null}
+        </div>
+
+        {tarefas.length === 0 ? (
+          <div className="flex flex-col gap-4 rounded-3xl border border-borda bg-superficie p-5">
+            <p className="text-[13px] leading-relaxed text-suave">
+              Nada marcado para hoje. Crie uma meta e pendure nela as tarefas que vão aparecer
+              aqui todo dia.
+            </p>
+            <div className="flex gap-2">
+              <Link
+                href="/metas/nova"
+                className="flex h-12 flex-1 items-center justify-center rounded-2xl bg-acento text-[14px] font-semibold text-fundo transition active:scale-[0.99]"
+              >
+                Nova meta
+              </Link>
+              <Link
+                href="/tarefas/nova"
+                className="flex h-12 flex-1 items-center justify-center rounded-2xl border border-borda text-[14px] font-medium text-texto transition active:bg-superficie-2"
+              >
+                Nova tarefa
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {tarefas.map((tarefa) => (
+              <ItemTarefa key={tarefa.id} tarefa={tarefa} mostrarMeta />
+            ))}
+          </ul>
+        )}
       </section>
     </div>
   )

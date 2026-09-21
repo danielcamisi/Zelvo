@@ -1,5 +1,11 @@
 import { z } from 'zod'
 
+import { errosPorCampo } from '../comum/formulario'
+
+// Reexportado para não quebrar quem já importa daqui; a definição mora em
+// `comum/formulario`, porque metas e tarefas usam o mesmo formato.
+export { errosPorCampo }
+
 /**
  * Validação de entrada da autenticação.
  *
@@ -69,18 +75,6 @@ export function sugerirUsername(email: string): string {
   return limpo.length >= 3 ? limpo : ''
 }
 
-/**
- * Transforma o erro do Zod num mapa campo → primeira mensagem, que é o que
- * o formulário sabe exibir.
- */
-export function errosPorCampo(erro: z.ZodError): Record<string, string> {
-  const mapa: Record<string, string> = {}
-  for (const problema of erro.issues) {
-    const campo = String(problema.path[0] ?? 'formulario')
-    if (!(campo in mapa)) mapa[campo] = problema.message
-  }
-  return mapa
-}
 
 /**
  * Para onde mandar o usuário depois do login. Só aceita destino interno:

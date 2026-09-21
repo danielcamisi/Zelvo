@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { IconeHoje, IconePerfil } from './Icones'
+import { IconeHoje, IconeMetas, IconePerfil, IconeTarefas } from './Icones'
 
 /**
  * Barra de abas do app. Cliente só por causa do `usePathname`: sem marcar a
@@ -14,6 +14,8 @@ import { IconeHoje, IconePerfil } from './Icones'
  */
 const ABAS = [
   { href: '/hoje', rotulo: 'Hoje', Icone: IconeHoje },
+  { href: '/metas', rotulo: 'Metas', Icone: IconeMetas },
+  { href: '/tarefas', rotulo: 'Tarefas', Icone: IconeTarefas },
   { href: '/perfil', rotulo: 'Perfil', Icone: IconePerfil },
 ]
 

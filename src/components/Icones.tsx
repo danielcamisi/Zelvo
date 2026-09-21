@@ -112,3 +112,30 @@ export function MarcaZelvo(props: PropsIcone) {
     </svg>
   )
 }
+
+export function IconeMetas(props: PropsIcone) {
+  return (
+    <Base {...props}>
+      <circle cx="12" cy="12" r="8.2" />
+      <circle cx="12" cy="12" r="4.4" />
+      <circle cx="12" cy="12" r="0.8" />
+    </Base>
+  )
+}
+
+export function IconeTarefas(props: PropsIcone) {
+  return (
+    <Base {...props}>
+      <path d="M3.5 6.5 5 8l2.5-2.5M3.5 12.5 5 14l2.5-2.5M3.5 18.5 5 20l2.5-2.5" />
+      <path d="M11 7h9.5M11 13h9.5M11 19h9.5" />
+    </Base>
+  )
+}
+
+export function IconeMais(props: PropsIcone) {
+  return (
+    <Base {...props}>
+      <path d="M12 5v14M5 12h14" />
+    </Base>
+  )
+}

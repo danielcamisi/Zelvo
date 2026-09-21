@@ -2,7 +2,8 @@
 
 import { useActionState, useEffect, useState } from 'react'
 import { useFormStatus } from 'react-dom'
-import { cadastrar, entrar, type EstadoFormulario } from '@/modulos/auth/acoes'
+import { cadastrar, entrar } from '@/modulos/auth/acoes'
+import type { EstadoFormulario } from '@/modulos/comum/formulario'
 import { sugerirUsername } from '@/modulos/auth/validacao'
 import Aviso from './Aviso'
 
