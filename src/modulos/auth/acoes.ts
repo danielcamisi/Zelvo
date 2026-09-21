@@ -137,7 +137,7 @@ async function tentarCadastrar(formulario: FormData): Promise<Resultado> {
   if (!data.session) {
     return {
       aviso:
-        'Conta criada. Confirme pelo link que chegou no seu e-mail e depois entre por aqui.',
+        'Confirme pelo link que chegou no seu e-mail e depois entre por aqui.',
     }
   }
 

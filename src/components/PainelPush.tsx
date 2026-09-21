@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
+import Aviso from './Aviso'
+
 type Estado = {
   instalado: boolean
   temServiceWorker: boolean
@@ -103,7 +105,7 @@ export default function PainelPush() {
       if (permissao !== 'granted') {
         throw new Error(
           permissao === 'denied'
-            ? 'Permissão negada. Remova o app da tela de início, adicione de novo e aceite quando o iPhone perguntar.'
+            ? 'Permissão negada. Remova o app da tela de início, adicione novamente e autorize quando o iPhone perguntar.'
             : 'Permissão não concedida.',
         )
       }
@@ -117,7 +119,7 @@ export default function PainelPush() {
           applicationServerKey: base64UrlParaBytes(chavePublica) as BufferSource,
         }))
 
-      setMensagem({ tipo: 'ok', texto: 'Lembretes ativados. Agora envie o push de teste.' })
+      setMensagem({ tipo: 'ok', texto: 'Notificações autorizadas. Envie a notificação de teste para confirmar.' })
       void inscricao
     } catch (erro) {
       setMensagem({ tipo: 'erro', texto: erro instanceof Error ? erro.message : String(erro) })
@@ -133,7 +135,7 @@ export default function PainelPush() {
     try {
       const registro = await navigator.serviceWorker.ready
       const inscricao = await registro.pushManager.getSubscription()
-      if (!inscricao) throw new Error('Nenhuma inscrição ativa. Toque em Ativar lembretes primeiro.')
+      if (!inscricao) throw new Error('Nenhuma inscrição ativa. Toque em Ativar notificações primeiro.')
 
       const resposta = await fetch('/api/push/testar', {
         method: 'POST',
@@ -145,7 +147,7 @@ export default function PainelPush() {
 
       setMensagem({
         tipo: 'ok',
-        texto: 'Push enviado. Bloqueie a tela do iPhone e aguarde alguns segundos.',
+        texto: 'Notificação enviada. Bloqueie a tela do iPhone e aguarde alguns segundos.',
       })
     } catch (erro) {
       setMensagem({ tipo: 'erro', texto: erro instanceof Error ? erro.message : String(erro) })
@@ -157,30 +159,28 @@ export default function PainelPush() {
   const podeUsarPush = estado.temPush && estado.temNotificacao && estado.temServiceWorker
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       {!estado.instalado && (
         <section className="flex flex-col gap-3 rounded-2xl border border-borda bg-superficie p-5">
-          <h2 className="text-base font-bold">Primeiro, instale na tela de início</h2>
-          <p className="text-sm leading-relaxed text-suave">
-            No iPhone, notificação só funciona com o app instalado. Em aba do Safari o recurso nem
-            existe.
+          <h3 className="text-[15px] font-semibold">Instale o app na tela de início</h3>
+          <p className="text-[13px] leading-relaxed text-suave">
+            No iPhone, a notificação só funciona com o app instalado. Em uma aba do Safari o
+            recurso não existe.
           </p>
-          <ol className="flex list-decimal flex-col gap-2 pl-5 text-sm leading-relaxed text-texto">
-            <li>Abra esta página no <strong>Safari</strong> (não funciona no Chrome do iPhone).</li>
-            <li>Toque no botão <strong>Compartilhar</strong>, o quadrado com a seta para cima.</li>
-            <li>Escolha <strong>Adicionar à Tela de Início</strong>.</li>
-            <li>Abra o Zelvo pelo <strong>ícone novo</strong> e volte aqui.</li>
+          <ol className="flex list-decimal flex-col gap-2 pl-5 text-[13px] leading-relaxed text-texto marker:text-tenue">
+            <li>Abra esta página no <strong className="font-semibold">Safari</strong>. O Chrome do iPhone não serve.</li>
+            <li>Toque em <strong className="font-semibold">Compartilhar</strong>, o quadrado com a seta para cima.</li>
+            <li>Escolha <strong className="font-semibold">Adicionar à Tela de Início</strong>.</li>
+            <li>Abra o Zelvo pelo <strong className="font-semibold">ícone novo</strong> e volte a esta tela.</li>
           </ol>
         </section>
       )}
 
       {estado.instalado && !podeUsarPush && (
-        <section className="rounded-2xl border border-alerta/40 bg-superficie p-5 text-sm leading-relaxed">
-          <p>
-            O app está instalado, mas este iPhone não expõe a API de push. Confira se o iOS está
-            na versão <strong>16.4 ou mais recente</strong>.
-          </p>
-        </section>
+        <Aviso tipo="informacao" titulo="Notificações indisponíveis neste aparelho">
+          O app está instalado, mas este iPhone não expõe a API de push. Verifique se o iOS está
+          na versão 16.4 ou mais recente.
+        </Aviso>
       )}
 
       {estado.instalado && podeUsarPush && (
@@ -189,37 +189,36 @@ export default function PainelPush() {
             type="button"
             onClick={ativar}
             disabled={ocupado || estado.permissao === 'granted'}
-            className="h-14 rounded-2xl bg-acento text-base font-bold text-fundo disabled:opacity-40"
+            className="h-13 rounded-2xl bg-acento text-[15px] font-semibold text-fundo transition active:scale-[0.99] disabled:bg-superficie-2 disabled:text-suave"
           >
-            {estado.permissao === 'granted' ? 'Lembretes ativados' : 'Ativar lembretes'}
+            {estado.permissao === 'granted' ? 'Notificações ativadas' : 'Ativar notificações'}
           </button>
 
           <button
             type="button"
             onClick={testar}
             disabled={ocupado || !estado.inscrito}
-            className="h-14 rounded-2xl border border-borda text-base font-semibold text-texto disabled:opacity-40"
+            className="h-13 rounded-2xl border border-borda text-[15px] font-medium text-texto transition active:bg-superficie-2 disabled:text-tenue"
           >
-            Enviar push de teste
+            Enviar notificação de teste
           </button>
         </section>
       )}
 
       {mensagem && (
-        <p
-          className={`rounded-2xl border p-4 text-sm leading-relaxed ${
-            mensagem.tipo === 'ok'
-              ? 'border-acento/40 bg-acento/10 text-texto'
-              : 'border-alerta/50 bg-alerta/10 text-texto'
-          }`}
+        <Aviso
+          tipo={mensagem.tipo === 'ok' ? 'sucesso' : 'erro'}
+          titulo={mensagem.tipo === 'ok' ? 'Pronto' : undefined}
         >
           {mensagem.texto}
-        </p>
+        </Aviso>
       )}
 
       <section className="flex flex-col gap-3 rounded-2xl border border-borda bg-superficie p-5">
-        <h2 className="text-xs font-bold tracking-widest text-suave uppercase">Diagnóstico</h2>
-        <dl className="flex flex-col gap-2 text-sm">
+        <h3 className="text-xs font-semibold tracking-[0.12em] text-tenue uppercase">
+          Diagnóstico
+        </h3>
+        <dl className="flex flex-col">
           <Linha rotulo="Instalado na tela de início" valor={estado.instalado} />
           <Linha rotulo="Service Worker" valor={estado.temServiceWorker} />
           <Linha rotulo="Push API" valor={estado.temPush} />
@@ -228,12 +227,12 @@ export default function PainelPush() {
           <Linha rotulo="Inscrito" valor={estado.inscrito} />
         </dl>
         {estado.endpoint && (
-          <p className="text-xs break-all text-suave">
+          <p className="text-[11px] break-all text-tenue">
             Endpoint: {estado.endpoint.slice(0, 60)}…
           </p>
         )}
-        <p className="text-xs leading-relaxed text-suave">
-          Se algo falhar, me mande esta lista. Ela diz exatamente onde parou.
+        <p className="text-[12px] leading-relaxed text-tenue">
+          Se algo falhar, envie esta lista. Ela indica exatamente onde o processo parou.
         </p>
       </section>
     </div>
@@ -241,12 +240,11 @@ export default function PainelPush() {
 }
 
 function Linha({ rotulo, valor }: { rotulo: string; valor: boolean | string }) {
-  const positivo = valor === true || valor === 'granted'
-  const texto = typeof valor === 'boolean' ? (valor ? 'sim' : 'não') : valor
+  const texto = typeof valor === 'boolean' ? (valor ? 'Sim' : 'Não') : valor
   return (
-    <div className="flex items-center justify-between gap-3">
+    <div className="flex items-center justify-between gap-3 border-b border-borda/70 py-2.5 text-[13px] last:border-b-0">
       <dt className="text-suave">{rotulo}</dt>
-      <dd className={`font-semibold ${positivo ? 'text-acento' : 'text-texto'}`}>{texto}</dd>
+      <dd className="font-medium text-texto">{texto}</dd>
     </div>
   )
 }

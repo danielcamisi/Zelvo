@@ -62,7 +62,7 @@ export async function POST(requisicao: Request) {
     let mensagem: string
     if (status === 404 || status === 410) {
       mensagem =
-        'A inscrição expirou ou foi revogada. Remova o app da tela de início, adicione de novo e ative os lembretes.'
+        'A inscrição expirou ou foi revogada. Remova o app da tela de início, adicione novamente e ative as notificações.'
     } else if (status === 403) {
       mensagem =
         'O serviço de push recusou a assinatura (403). Normalmente é chave VAPID trocada depois da inscrição, ou VAPID_SUBJECT inválido. Gere as chaves uma vez só e reinscreva o app.'
