@@ -1,5 +1,6 @@
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
+import { avaliarUrlDoBanco } from './erros'
 import * as schema from './schema'
 
 /**
@@ -21,6 +22,11 @@ function criarConexao() {
       'DATABASE_URL não está configurada. Pegue a connection string do Supabase em Project Settings → Database e adicione na Vercel (Production e Preview).',
     )
   }
+
+  // Erro que dá para apontar antes de tentar conectar vale mais do que o
+  // ENOTFOUND que viria depois.
+  const problema = avaliarUrlDoBanco(url)
+  if (problema) throw new Error(problema)
 
   // Em serverless cada invocação é um processo curto: pool pequeno e sem
   // prepared statements, que o pooler do Supabase (PgBouncer) não suporta.

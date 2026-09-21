@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
-import { codigoDeErro, mensagemDeErro, traduzirErroDeBanco } from '../erros'
+import { avaliarUrlDoBanco, codigoDeErro, mensagemDeErro, traduzirErroDeBanco } from '../erros'
 
 describe('erros de banco', () => {
   it('aponta o campo errado da connection string por código', () => {
@@ -88,5 +88,46 @@ describe('erro embrulhado pelo Drizzle', () => {
     laco.cause = laco
     assert.equal(codigoDeErro(laco), null)
     assert.equal(mensagemDeErro(laco), 'ciclo')
+  })
+})
+
+describe('connection string do Supabase', () => {
+  // A Direct connection só tem registro AAAA. A Vercel sai por IPv4, então o
+  // Node devolve ENOTFOUND — que parece host digitado errado e manda procurar
+  // no lugar errado. Apontar isso antes de conectar economiza a busca inteira.
+  it('reconhece a Direct connection, que a Vercel não alcança', () => {
+    const aviso = avaliarUrlDoBanco(
+      'postgresql://postgres:senha@db.jvixilufgchgwfrdyoib.supabase.co:5432/postgres',
+    )
+    assert.match(String(aviso), /Direct connection/)
+    assert.match(String(aviso), /pooler/)
+  })
+
+  it('aceita a Transaction pooler', () => {
+    for (const url of [
+      'postgresql://postgres.abc:senha@aws-0-us-east-1.pooler.supabase.com:6543/postgres',
+      'postgresql://postgres.abc:senha@aws-1-us-east-1.pooler.supabase.com:6543/postgres',
+    ]) {
+      assert.equal(avaliarUrlDoBanco(url), null)
+    }
+  })
+
+  it('não estoura com senha cheia de símbolo, nem com lixo', () => {
+    // `new URL` quebraria aqui; é justamente quando o diagnóstico mais importa.
+    assert.equal(
+      avaliarUrlDoBanco('postgresql://postgres.abc:a@b#c/d@aws-0-sa-east-1.pooler.supabase.com:6543/postgres'),
+      null,
+    )
+    assert.equal(avaliarUrlDoBanco(''), null)
+    assert.equal(avaliarUrlDoBanco(undefined), null)
+    assert.equal(avaliarUrlDoBanco('isso não é uma url'), null)
+  })
+
+  it('nunca devolve a connection string no aviso', () => {
+    const aviso = avaliarUrlDoBanco(
+      'postgresql://postgres:senhaSecreta@db.jvixilufgchgwfrdyoib.supabase.co:5432/postgres',
+    )
+    assert.equal(String(aviso).includes('senhaSecreta'), false)
+    assert.equal(String(aviso).includes('jvixilufgchgwfrdyoib'), false)
   })
 })

@@ -52,7 +52,11 @@ export function traduzirErroDeBanco(erro: unknown): string {
   const mensagem = mensagensDe(erro)
 
   // O erro que nós mesmos lançamos quando a variável não existe já vem pronto.
-  if (erro instanceof Error && erro.message.startsWith('DATABASE_URL não está configurada')) {
+  if (
+    erro instanceof Error &&
+    (erro.message.startsWith('DATABASE_URL não está configurada') ||
+      erro.message.startsWith('A DATABASE_URL está usando a Direct connection'))
+  ) {
     return erro.message
   }
 
@@ -99,4 +103,32 @@ export function mensagemDeErro(erro: unknown, limite = 200): string {
 
   const escolhida = mensagens[mensagens.length - 1] ?? String(erro)
   return escolhida.replace(/\s+/g, ' ').slice(0, limite)
+}
+
+/**
+ * Problemas que dá para apontar só olhando a connection string, antes de
+ * tentar conectar.
+ *
+ * O caso que motivou isto: o Supabase oferece duas strings, e a **Direct
+ * connection** (`db.<ref>.supabase.co`) só tem endereço IPv6. As funções da
+ * Vercel saem por IPv4, então o Node nem resolve o nome e devolve
+ * `ENOTFOUND` — um erro que parece "host digitado errado" e faz procurar no
+ * lugar errado por muito tempo. A string certa para serverless é a
+ * **Transaction pooler**.
+ *
+ * Devolve `null` quando não há nada a apontar. Nunca devolve a URL.
+ */
+export function avaliarUrlDoBanco(url: string | undefined): string | null {
+  if (!url) return null
+
+  // Regex em vez de `new URL`: senha com caractere especial faz o parser
+  // estourar, e aí o diagnóstico morre junto com o que queria diagnosticar.
+  const host = /^[a-z]+:\/\/[^@/]*@?([^:/?#]+)/i.exec(url)?.[1]
+  if (!host) return null
+
+  if (/^db\.[a-z0-9]+\.supabase\.co$/i.test(host)) {
+    return 'A DATABASE_URL está usando a Direct connection do Supabase (`db.<ref>.supabase.co`), que só responde em IPv6 — e as funções da Vercel saem por IPv4, então o endereço nem resolve. Troque pela string da **Transaction pooler**, em Connect no painel do Supabase: host `...pooler.supabase.com`, porta 6543, usuário `postgres.<ref>`.'
+  }
+
+  return null
 }
