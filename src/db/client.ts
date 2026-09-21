@@ -7,12 +7,18 @@ import * as schema from './schema'
  *
  * Este módulo só pode ser importado em código de servidor. O cliente nunca
  * fala com o banco: tudo passa por Server Action ou Route Handler.
+ *
+ * A conexão é preguiçosa de propósito. O `next build` carrega os módulos das
+ * páginas para coletar configuração, e abrir conexão nessa hora faria o build
+ * inteiro falhar em qualquer ambiente sem `DATABASE_URL` — inclusive um
+ * Preview onde a variável ficou de fora. Assim o erro só aparece na primeira
+ * consulta de verdade, onde ele é informação útil em vez de deploy quebrado.
  */
 function criarConexao() {
   const url = process.env.DATABASE_URL
   if (!url) {
     throw new Error(
-      'DATABASE_URL não está configurada. Pegue a connection string do Supabase em Project Settings → Database.',
+      'DATABASE_URL não está configurada. Pegue a connection string do Supabase em Project Settings → Database e adicione na Vercel (Production e Preview).',
     )
   }
 
@@ -21,15 +27,29 @@ function criarConexao() {
   return postgres(url, { max: 1, prepare: false })
 }
 
+type Banco = ReturnType<typeof drizzle<typeof schema>>
+
 declare global {
-  // eslint-disable-next-line no-var
-  var __conexaoZelvo: ReturnType<typeof criarConexao> | undefined
+  var __bancoZelvo: Banco | undefined
 }
 
-// Em desenvolvimento o hot reload recria os módulos: reaproveita a conexão
-// para não estourar o limite do Postgres.
-const conexao = globalThis.__conexaoZelvo ?? criarConexao()
-if (process.env.NODE_ENV !== 'production') globalThis.__conexaoZelvo = conexao
+function obterBanco(): Banco {
+  // Em desenvolvimento o hot reload recria os módulos: reaproveita a conexão
+  // para não estourar o limite do Postgres.
+  if (globalThis.__bancoZelvo) return globalThis.__bancoZelvo
 
-export const db = drizzle(conexao, { schema })
+  const banco = drizzle(criarConexao(), { schema })
+  if (process.env.NODE_ENV !== 'production') globalThis.__bancoZelvo = banco
+  return banco
+}
+
+/** Mesma interface do Drizzle; só abre a conexão na primeira consulta. */
+export const db = new Proxy({} as Banco, {
+  get(_alvo, propriedade, receptor) {
+    const banco = obterBanco()
+    const valor = Reflect.get(banco, propriedade, receptor)
+    return typeof valor === 'function' ? valor.bind(banco) : valor
+  },
+})
+
 export { schema }
