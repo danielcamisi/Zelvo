@@ -103,10 +103,31 @@ describe('connection string do Supabase', () => {
     assert.match(String(aviso), /pooler/)
   })
 
+  it('reconhece a Session pooler, que esgota em serverless', () => {
+    const aviso = avaliarUrlDoBanco(
+      'postgresql://postgres.abc:senha@aws-1-us-east-1.pooler.supabase.com:5432/postgres',
+    )
+    assert.match(String(aviso), /Session pooler/)
+    assert.match(String(aviso), /6543/)
+  })
+
+  it('traduz o EMAXCONNSESSION do pooler', () => {
+    // XX000 é código genérico de erro interno: quem identifica o caso é a
+    // mensagem, então a tradução não pode depender só do código.
+    const erro = Object.assign(
+      new Error('(EMAXCONNSESSION) max clients reached in session mode - max clients are limited to pool_size: 15'),
+      { code: 'XX000' },
+    )
+    assert.match(traduzirErroDeBanco(erro), /Session pooler/)
+    assert.match(traduzirErroDeBanco(erro), /6543/)
+  })
+
   it('aceita a Transaction pooler', () => {
     for (const url of [
       'postgresql://postgres.abc:senha@aws-0-us-east-1.pooler.supabase.com:6543/postgres',
       'postgresql://postgres.abc:senha@aws-1-us-east-1.pooler.supabase.com:6543/postgres',
+      // Porta 5432 fora do pooler é a porta normal do Postgres: nada a dizer.
+      'postgresql://postgres:senha@localhost:5432/postgres',
     ]) {
       assert.equal(avaliarUrlDoBanco(url), null)
     }
@@ -121,6 +142,15 @@ describe('connection string do Supabase', () => {
     assert.equal(avaliarUrlDoBanco(''), null)
     assert.equal(avaliarUrlDoBanco(undefined), null)
     assert.equal(avaliarUrlDoBanco('isso não é uma url'), null)
+  })
+
+  it('acha o host mesmo com @ dentro da senha', () => {
+    // Um `@` na senha faria um regex ingênuo cortar no lugar errado e
+    // acusar o host errado.
+    const aviso = avaliarUrlDoBanco(
+      'postgresql://postgres.abc:se@nha@aws-0-sa-east-1.pooler.supabase.com:5432/postgres',
+    )
+    assert.match(String(aviso), /Session pooler/)
   })
 
   it('nunca devolve a connection string no aviso', () => {

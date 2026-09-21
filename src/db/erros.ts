@@ -55,7 +55,8 @@ export function traduzirErroDeBanco(erro: unknown): string {
   if (
     erro instanceof Error &&
     (erro.message.startsWith('DATABASE_URL não está configurada') ||
-      erro.message.startsWith('A DATABASE_URL está usando a Direct connection'))
+      erro.message.startsWith('A DATABASE_URL está usando a Direct connection') ||
+      erro.message.startsWith('A DATABASE_URL está na Session pooler'))
   ) {
     return erro.message
   }
@@ -81,6 +82,12 @@ export function traduzirErroDeBanco(erro: unknown): string {
       return 'O usuário do banco não tem permissão nesta tabela.'
     default:
       break
+  }
+
+  // XX000 é o código genérico de erro interno, então quem identifica este
+  // caso é a mensagem, não o código.
+  if (/EMAXCONNSESSION|max clients reached in session mode/i.test(mensagem)) {
+    return 'O pooler recusou: a DATABASE_URL está na Session pooler (porta 5432), onde cabem 15 clientes e cada um segura a conexão do início ao fim. Troque a porta para 6543, a Transaction pooler. Host, usuário e senha seguem iguais.'
   }
 
   // O pooler em modo transação não aceita prepared statements. Se isso
@@ -123,11 +130,23 @@ export function avaliarUrlDoBanco(url: string | undefined): string | null {
 
   // Regex em vez de `new URL`: senha com caractere especial faz o parser
   // estourar, e aí o diagnóstico morre junto com o que queria diagnosticar.
-  const host = /^[a-z]+:\/\/[^@/]*@?([^:/?#]+)/i.exec(url)?.[1]
+  // O `[^/]*@` guloso pega o último `@` antes do host, que é o que separa
+  // credencial de endereço mesmo quando a senha tem um `@` no meio.
+  const partes = /^[a-z]+:\/\/(?:[^/]*@)?([^@:/?#]+)(?::(\d+))?/i.exec(url)
+  const host = partes?.[1]
+  const porta = partes?.[2]
   if (!host) return null
 
   if (/^db\.[a-z0-9]+\.supabase\.co$/i.test(host)) {
     return 'A DATABASE_URL está usando a Direct connection do Supabase (`db.<ref>.supabase.co`), que só responde em IPv6 — e as funções da Vercel saem por IPv4, então o endereço nem resolve. Troque pela string da **Transaction pooler**, em Connect no painel do Supabase: host `...pooler.supabase.com`, porta 6543, usuário `postgres.<ref>`.'
+  }
+
+  // Mesmo host, portas diferentes: 5432 é a Session pooler e 6543 é a
+  // Transaction pooler. Em modo sessão cada cliente segura uma conexão do
+  // banco do começo ao fim, e o limite é 15 — uma função serverless, que
+  // sobe muitas instâncias, esgota isso em segundos.
+  if (/\.pooler\.supabase\.com$/i.test(host) && porta === '5432') {
+    return 'A DATABASE_URL está na Session pooler (porta 5432). Em modo sessão cada conexão fica presa a um cliente e o limite é 15, o que uma função serverless estoura em segundos. Troque só a porta para **6543**, que é a Transaction pooler — o host, o usuário e a senha continuam os mesmos.'
   }
 
   return null

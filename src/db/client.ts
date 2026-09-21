@@ -30,7 +30,13 @@ function criarConexao() {
 
   // Em serverless cada invocação é um processo curto: pool pequeno e sem
   // prepared statements, que o pooler do Supabase (PgBouncer) não suporta.
-  return postgres(url, { max: 1, prepare: false })
+  return postgres(url, {
+    max: 1,
+    prepare: false,
+    // Solta o socket quando a invocação acaba, em vez de deixá-lo ocupando
+    // vaga no pooler até o processo morrer.
+    idle_timeout: 20,
+  })
 }
 
 type Banco = ReturnType<typeof drizzle<typeof schema>>
