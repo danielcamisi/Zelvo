@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+@theme {
+  --color-fundo: #0a0a0c;
+  --color-superficie: #131317;
+  --color-superficie-2: #1b1b21;
+  --color-borda: #26262e;
+  --color-texto: #e1e1e6;
+  --color-suave: #8c8c96;
+  --color-acento: #c6f24e;
+  --color-alerta: #f2845c;
+  --color-atencao: #e8c15c;
+}
+
+html {
+  /* Sem zoom por duplo toque e sem "bounce" branco nas bordas no iOS. */
+  -webkit-text-size-adjust: 100%;
+  background: var(--color-fundo);
+}
+
+body {
+  /* Respeita a área segura do iPhone quando instalado na tela de início. */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
