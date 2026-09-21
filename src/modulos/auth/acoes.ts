@@ -5,21 +5,33 @@ import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { db } from '@/db/client'
 import { usuarios } from '@/db/schema'
+import { mensagemDeErro, traduzirErroDeBanco } from '@/db/erros'
 import { clienteServidor } from './supabase-servidor'
 import { garantirPerfil } from './perfil'
-import { destinoSeguro, errosPorCampo, esquemaCadastro, esquemaEntrar } from './validacao'
+import {
+  destinoSeguro,
+  errosPorCampo,
+  esquemaCadastro,
+  esquemaEntrar,
+} from './validacao'
 
 /**
  * Server Actions da autenticação.
  *
  * Tudo que vem do formulário passa pelo Zod antes de qualquer coisa. O
  * `usuario_id` nunca vem do cliente: sai sempre da sessão do Supabase.
+ *
+ * As funções `tentar*` fazem o trabalho e nunca redirecionam. O `redirect()`
+ * fica só nas exportadas, fora do try, porque ele funciona lançando uma
+ * exceção — dentro de um catch ele viraria "erro inesperado".
  */
 
 export type EstadoFormulario = {
   erros?: Record<string, string>
   aviso?: string
 }
+
+type Resultado = EstadoFormulario | { destino: string }
 
 /** Mensagens do Supabase vêm em inglês e cruas. Traduz o que o usuário pode consertar. */
 function traduzirErro(codigo: string | undefined, mensagem: string): string {
@@ -42,10 +54,25 @@ function traduzirErro(codigo: string | undefined, mensagem: string): string {
   }
 }
 
-export async function entrar(
-  _anterior: EstadoFormulario,
-  formulario: FormData,
-): Promise<EstadoFormulario> {
+/**
+ * Rede de segurança: qualquer falha não prevista vira texto na tela em vez de
+ * uma requisição vermelha sem explicação. O erro completo continua indo para
+ * o log da Vercel.
+ */
+function erroInesperado(erro: unknown, onde: string): EstadoFormulario {
+  console.error(`[zelvo:${onde}]`, erro)
+
+  const deBanco = traduzirErroDeBanco(erro)
+  if (deBanco) return { erros: { formulario: deBanco } }
+
+  return {
+    erros: {
+      formulario: `Falha inesperada no servidor: ${mensagemDeErro(erro)}`,
+    },
+  }
+}
+
+async function tentarEntrar(formulario: FormData): Promise<Resultado> {
   const entrada = esquemaEntrar.safeParse({
     email: formulario.get('email'),
     senha: formulario.get('senha'),
@@ -70,14 +97,10 @@ export async function entrar(
     username: metadados.username,
   })
 
-  revalidatePath('/', 'layout')
-  redirect(destinoSeguro(formulario.get('proximo')))
+  return { destino: destinoSeguro(formulario.get('proximo')) }
 }
 
-export async function cadastrar(
-  _anterior: EstadoFormulario,
-  formulario: FormData,
-): Promise<EstadoFormulario> {
+async function tentarCadastrar(formulario: FormData): Promise<Resultado> {
   const entrada = esquemaCadastro.safeParse({
     nome: formulario.get('nome'),
     username: formulario.get('username'),
@@ -125,13 +148,53 @@ export async function cadastrar(
     username: entrada.data.username,
   })
 
-  revalidatePath('/', 'layout')
-  redirect('/hoje')
+  return { destino: '/hoje' }
+}
+
+export async function entrar(
+  _anterior: EstadoFormulario,
+  formulario: FormData,
+): Promise<EstadoFormulario> {
+  let resultado: Resultado
+  try {
+    resultado = await tentarEntrar(formulario)
+  } catch (erro) {
+    return erroInesperado(erro, 'entrar')
+  }
+
+  if ('destino' in resultado) {
+    revalidatePath('/', 'layout')
+    redirect(resultado.destino)
+  }
+  return resultado
+}
+
+export async function cadastrar(
+  _anterior: EstadoFormulario,
+  formulario: FormData,
+): Promise<EstadoFormulario> {
+  let resultado: Resultado
+  try {
+    resultado = await tentarCadastrar(formulario)
+  } catch (erro) {
+    return erroInesperado(erro, 'cadastrar')
+  }
+
+  if ('destino' in resultado) {
+    revalidatePath('/', 'layout')
+    redirect(resultado.destino)
+  }
+  return resultado
 }
 
 export async function sair(): Promise<void> {
-  const supabase = await clienteServidor()
-  await supabase.auth.signOut()
+  try {
+    const supabase = await clienteServidor()
+    await supabase.auth.signOut()
+  } catch (erro) {
+    // Sair nunca pode travar o usuário dentro do app.
+    console.error('[zelvo:sair]', erro)
+  }
   revalidatePath('/', 'layout')
   redirect('/entrar')
 }

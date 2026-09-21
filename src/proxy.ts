@@ -12,7 +12,7 @@ import { createServerClient } from '@supabase/ssr'
  */
 
 /** Rotas que existem para quem ainda não entrou. */
-const PUBLICAS = ['/entrar', '/auth']
+const PUBLICAS = ['/entrar', '/auth', '/api/diagnostico']
 
 function ehPublica(caminho: string): boolean {
   return PUBLICAS.some((rota) => caminho === rota || caminho.startsWith(`${rota}/`))
@@ -52,6 +52,12 @@ export async function proxy(requisicao: NextRequest) {
   } = await supabase.auth.getUser()
 
   const caminho = requisicao.nextUrl.pathname
+
+  // Só navegação é redirecionada. Um POST redirecionado mantém o método e o
+  // corpo, então redirecionar um Server Action o entregaria na rota errada —
+  // que é como uma proteção de rota vira um bug difícil de enxergar.
+  const ehNavegacao = requisicao.method === 'GET' || requisicao.method === 'HEAD'
+  if (!ehNavegacao) return resposta
 
   if (caminho === '/') {
     const destino = requisicao.nextUrl.clone()
