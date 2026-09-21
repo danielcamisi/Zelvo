@@ -1,3 +1,4 @@
+export * from './conclusao'
 export * from './datas'
 export * from './foco'
 export * from './nivel'

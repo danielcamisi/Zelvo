@@ -5,6 +5,9 @@
  * hierarquia é feita por luminosidade (fundo escuro, superfície um degrau
  * acima, texto branco) e por peso de fonte, nunca por matiz. Ao mexer aqui,
  * manter isso: um token colorido volta a "colorir" o app inteiro.
+ *
+ * Os valores abaixo são o tema ESCURO, que é o padrão do Zelvo. O tema claro
+ * é a mesma escala invertida e mora logo depois.
  */
 @theme {
   --color-fundo: #08080a;
@@ -20,6 +23,70 @@
   --color-acento: #ffffff;
 }
 
+/*
+ * Tema claro.
+ *
+ * Os valores vivem uma vez só, em `--claro-*`; o que se repete é só o
+ * mapeamento, porque ele precisa existir em dois lugares: dentro da media
+ * query (quando o usuário não escolheu e o sistema pede claro) e no seletor
+ * de atributo (quando ele escolheu na mão). Não dá para juntar os dois numa
+ * regra só em CSS.
+ *
+ * Aqui o acento é quase-preto: os botões principais viram pretos com texto
+ * branco, que é a mesma relação do tema escuro de cabeça para baixo.
+ */
+:root {
+  --claro-fundo: #ffffff;
+  --claro-superficie: #f7f7f8;
+  --claro-superficie-2: #efeff1;
+  --claro-superficie-3: #e4e4e7;
+  --claro-borda: #e2e2e6;
+  --claro-borda-forte: #b0b0b9;
+  --claro-texto: #0c0c0f;
+  --claro-suave: #54545d;
+  --claro-tenue: #74747e;
+  --claro-acento: #0c0c0f;
+
+  /* `color-scheme` é o que faz o iOS desenhar os seletores de data e hora, a
+     barra de rolagem e o teclado na cor certa. Sem ele o calendário nativo
+     abre branco dentro do app escuro. */
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-tema='escuro']) {
+    color-scheme: light;
+    --color-fundo: var(--claro-fundo);
+    --color-superficie: var(--claro-superficie);
+    --color-superficie-2: var(--claro-superficie-2);
+    --color-superficie-3: var(--claro-superficie-3);
+    --color-borda: var(--claro-borda);
+    --color-borda-forte: var(--claro-borda-forte);
+    --color-texto: var(--claro-texto);
+    --color-suave: var(--claro-suave);
+    --color-tenue: var(--claro-tenue);
+    --color-acento: var(--claro-acento);
+  }
+}
+
+:root[data-tema='claro'] {
+  color-scheme: light;
+  --color-fundo: var(--claro-fundo);
+  --color-superficie: var(--claro-superficie);
+  --color-superficie-2: var(--claro-superficie-2);
+  --color-superficie-3: var(--claro-superficie-3);
+  --color-borda: var(--claro-borda);
+  --color-borda-forte: var(--claro-borda-forte);
+  --color-texto: var(--claro-texto);
+  --color-suave: var(--claro-suave);
+  --color-tenue: var(--claro-tenue);
+  --color-acento: var(--claro-acento);
+}
+
+:root[data-tema='escuro'] {
+  color-scheme: dark;
+}
+
 html {
   /* Sem zoom por duplo toque e sem "bounce" branco nas bordas no iOS. */
   -webkit-text-size-adjust: 100%;
@@ -33,11 +100,81 @@ body {
 }
 
 /*
- * Foco visível só no teclado. Sem paleta colorida, o contorno branco é o
- * único sinal de onde está o foco — tirá-lo deixaria o app inacessível
- * fora do toque.
+ * Foco visível só no teclado. Sem paleta colorida, o contorno é o único
+ * sinal de onde está o foco — tirá-lo deixaria o app inacessível fora do
+ * toque.
  */
 :focus-visible {
   outline: 2px solid var(--color-acento);
   outline-offset: 2px;
+}
+
+/*
+ * A comemoração de XP: sobe de baixo da tela até o meio, aparecendo, e
+ * some no lugar. Uma animação só, em dois tempos, porque o navegador
+ * anima `transform` e `opacity` sem repintar o layout.
+ */
+@keyframes zelvo-xp-entra {
+  from {
+    opacity: 0;
+    transform: translateY(38vh) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes zelvo-xp-sai {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-8vh) scale(0.98);
+  }
+}
+
+.zelvo-xp-entra {
+  animation: zelvo-xp-entra 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.zelvo-xp-sai {
+  animation: zelvo-xp-sai 380ms ease-in both;
+}
+
+/*
+ * Quem pediu menos movimento no sistema recebe o mesmo aviso, só que
+ * aparecendo e sumindo no lugar. A informação não pode depender do
+ * movimento.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .zelvo-xp-entra,
+  .zelvo-xp-sai {
+    animation-duration: 160ms;
+    animation-timing-function: linear;
+  }
+
+  @keyframes zelvo-xp-entra {
+    from {
+      opacity: 0;
+      transform: none;
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes zelvo-xp-sai {
+    from {
+      opacity: 1;
+      transform: none;
+    }
+    to {
+      opacity: 0;
+      transform: none;
+    }
+  }
 }

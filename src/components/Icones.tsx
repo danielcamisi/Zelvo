@@ -139,3 +139,11 @@ export function IconeMais(props: PropsIcone) {
     </Base>
   )
 }
+
+export function IconeVisto(props: PropsIcone) {
+  return (
+    <Base {...props}>
+      <path d="m5 12.5 4.5 4.5L19 7.5" />
+    </Base>
+  )
+}

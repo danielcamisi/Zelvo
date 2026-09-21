@@ -136,11 +136,13 @@ export function Selecao({
         aria-invalid={erro ? true : undefined}
         aria-describedby={descrito(nome, erro, apoio)}
         // `appearance-none` some com a seta nativa, então o fundo desenha a
-        // nossa — sem isso o iOS pinta o controle de branco.
+        // nossa — sem isso o iOS pinta o controle de branco. O cinza da seta
+        // é um meio-termo: ela precisa aparecer no tema claro e no escuro, e
+        // um `data:` de fundo não herda `currentColor`.
         className={`h-13 appearance-none bg-[length:10px] bg-[right_1.1rem_center] bg-no-repeat pr-10 ${BASE_CONTROLE} ${borda(erro)}`}
         style={{
           backgroundImage:
-            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6' fill='none' stroke='%23a1a1ab' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1l4 4 4-4'/%3E%3C/svg%3E\")",
+            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6' fill='none' stroke='%2376767f' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1l4 4 4-4'/%3E%3C/svg%3E\")",
         }}
         {...resto}
       >
@@ -186,7 +188,10 @@ export function Dias({
           return (
             <label
               key={valor}
-              className={`flex h-11 min-w-11 cursor-pointer items-center justify-center rounded-xl border px-3 text-[13px] font-medium transition ${
+              // O checkbox é `sr-only`, então o anel de foco do teclado
+              // morreria com ele; `has-[:focus-visible]` devolve o anel ao
+              // rótulo, que é o que se vê.
+              className={`flex h-11 min-w-11 cursor-pointer items-center justify-center rounded-xl border px-3 text-[13px] font-medium transition has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-acento ${
                 marcado
                   ? 'border-acento bg-superficie-3 text-texto'
                   : 'border-borda bg-superficie text-tenue'

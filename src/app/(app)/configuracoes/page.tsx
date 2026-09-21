@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
+import AssinaturaZivvu from '@/components/AssinaturaZivvu'
 import PainelPush from '@/components/PainelPush'
+import SeletorDeTema from '@/components/SeletorDeTema'
 import { IconeSair } from '@/components/Icones'
 import { exigirUsuario } from '@/modulos/auth/sessao'
 import { sair } from '@/modulos/auth/acoes'
@@ -22,6 +24,19 @@ export default async function Pagina() {
           Ajustes do aplicativo e da sua conta.
         </p>
       </header>
+
+      <section className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-xs font-semibold tracking-[0.12em] text-tenue uppercase">
+            Aparência
+          </h2>
+          <p className="text-[13px] leading-relaxed text-suave">
+            A escolha vale neste aparelho. Em Sistema, o Zelvo acompanha o modo claro ou escuro do
+            seu iPhone.
+          </p>
+        </div>
+        <SeletorDeTema />
+      </section>
 
       <section className="flex flex-col gap-4">
         <div className="flex flex-col gap-1">
@@ -52,6 +67,8 @@ export default async function Pagina() {
           </button>
         </form>
       </section>
+
+      <AssinaturaZivvu className="pb-2" />
     </div>
   )
 }

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import AssinaturaZivvu from '@/components/AssinaturaZivvu'
 import Aviso from '@/components/Aviso'
 import FormularioAuth from '@/components/FormularioAuth'
 import { MarcaZelvo } from '@/components/Icones'
@@ -37,6 +38,8 @@ export default async function Pagina({
       ) : null}
 
       <FormularioAuth proximo={proximo} />
+
+      <AssinaturaZivvu />
     </main>
   )
 }

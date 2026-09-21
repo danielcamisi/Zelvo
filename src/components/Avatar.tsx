@@ -1,7 +1,7 @@
 /**
- * Foto de perfil do header. Por ora é um avatar de iniciais: o upload de
- * imagem ainda não existe, e `usuarios.avatar_url` nasce nulo. Quando o
- * upload entrar, basta preencher `url` — o resto da interface não muda.
+ * Foto de perfil. Sem imagem, cai nas iniciais — `usuarios.avatar_url` nasce
+ * nulo e continua assim para quem nunca enviou nada. O envio em si mora em
+ * `FotoDePerfil`; aqui é só a exibição, usada também no cabeçalho.
  */
 export default function Avatar({
   nome,
@@ -19,9 +19,9 @@ export default function Avatar({
 
   if (url) {
     return (
-      // Imagem vinda de armazenamento externo, com domínio ainda não definido:
-      // <img> evita ter de fixar o host no next.config antes da hora.
-      // eslint-disable-next-line @next/next/no-img-element
+      // <img> e não `next/image` de propósito: a foto vem do Storage do
+      // Supabase já cortada em 512x512, então não há o que otimizar, e usar
+      // `next/image` exigiria fixar o host do projeto no next.config.
       <img
         src={url}
         alt=""

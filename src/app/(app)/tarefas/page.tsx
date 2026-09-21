@@ -4,13 +4,18 @@ import Link from 'next/link'
 import ItemTarefa from '@/components/ItemTarefa'
 import { IconeMais } from '@/components/Icones'
 import { exigirUsuario } from '@/modulos/auth/sessao'
+import { conclusoesDoDia } from '@/modulos/conclusoes/consultas'
 import { todasAsTarefas } from '@/modulos/tarefas/consultas'
+import { type DataISO, dataNoFuso } from '@/regras/datas'
+import { ocorreEm } from '@/regras/recorrencia'
 
 export const metadata: Metadata = { title: 'Tarefas · Zelvo' }
 
 export default async function Pagina() {
   const usuario = await exigirUsuario()
   const lista = await todasAsTarefas(usuario.id)
+  const hoje = dataNoFuso(new Date(), usuario.timezone) as DataISO
+  const concluidas = await conclusoesDoDia(usuario.id, hoje)
 
   return (
     <div className="flex flex-col gap-5">
@@ -33,7 +38,15 @@ export default async function Pagina() {
       ) : (
         <ul className="flex flex-col gap-2">
           {lista.map((tarefa) => (
-            <ItemTarefa key={tarefa.id} tarefa={tarefa} mostrarMeta />
+            <ItemTarefa
+              key={tarefa.id}
+              tarefa={tarefa}
+              mostrarMeta
+              // O botão só aparece na tarefa que cai hoje: marcar um dia que
+              // ainda não chegou não significa nada.
+              concluivel={ocorreEm(tarefa, hoje)}
+              concluida={concluidas.has(tarefa.id)}
+            />
           ))}
         </ul>
       )}

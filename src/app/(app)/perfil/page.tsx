@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import Avatar from '@/components/Avatar'
+import FotoDePerfil from '@/components/FotoDePerfil'
 import { exigirUsuario } from '@/modulos/auth/sessao'
 import { nivelPorXp } from '@/regras/nivel'
 
@@ -12,7 +12,7 @@ export default async function Pagina() {
   return (
     <div className="flex flex-col gap-7">
       <header className="flex flex-col items-center gap-3 text-center">
-        <Avatar nome={usuario.nome} url={usuario.avatarUrl} tamanho="grande" />
+        <FotoDePerfil usuarioId={usuario.id} nome={usuario.nome} url={usuario.avatarUrl} />
         <div className="flex flex-col gap-1">
           <h1 className="text-xl font-semibold tracking-tight">{usuario.nome}</h1>
           <p className="text-[13px] text-tenue">@{usuario.username}</p>
@@ -60,8 +60,8 @@ export default async function Pagina() {
       </section>
 
       <p className="text-[13px] leading-relaxed text-tenue">
-        A edição dos dados e a foto de perfil entram em uma etapa seguinte. Os ajustes do app
-        ficam em Configurações, no ícone de engrenagem do topo.
+        A edição dos dados entra em uma etapa seguinte. Os ajustes do app, incluindo o tema claro
+        ou escuro, ficam em Configurações, no ícone de engrenagem do topo.
       </p>
     </div>
   )
